@@ -1,0 +1,59 @@
+version: '3.3'
+
+services:
+
+  service-registry:
+    image: ghcr.io/sreenidhize/bc55_service-registry:latest
+    container_name: backend_sr
+    restart: always
+    ports:
+     - 8761:8761
+
+  cloud-gateway: 
+    image: ghcr.io/sreenidhize/bc55_cloud-gateway:latest
+    container_name: backend_cg
+    restart: always
+    ports:
+    - 9191:9191
+    depends_on:
+      - service-registry    
+
+  jobs: 
+    image: ghcr.io/sreenidhize/bc55_jobs:latest
+    container_name: backend_j
+    restart: always
+    ports:
+     - 9002:9002
+    depends_on: 
+     - cloud-gateway
+ 
+
+  saved-jobs: 
+    image: ghcr.io/sreenidhize/bc55_saved-jobs:latest
+    container_name: backend_sj
+    restart: always
+    ports:
+    - 9003:9003
+    depends_on:
+      - cloud-gateway
+    
+
+  applied-jobs: 
+    image: ghcr.io/sreenidhize/bc55_applied-jobs:latest
+    container_name: backend_aj
+    restart: always
+    ports:
+    - 9004:9004
+    depends_on:
+      - cloud-gateway      
+
+
+  locations: 
+    image: ghcr.io/sreenidhize/bc55_locations:latest
+    container_name: backend_l
+    restart: always
+    ports:
+    - 9001:9001
+    depends_on:
+      - cloud-gateway    
+     

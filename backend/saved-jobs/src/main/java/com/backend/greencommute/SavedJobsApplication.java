@@ -1,0 +1,17 @@
+package com.backend.greencommute;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.modelmapper.ModelMapper;
+@SpringBootApplication
+public class SavedJobsApplication {
+	@Bean
+	public ModelMapper modelMapper() {
+		return new ModelMapper();
+	}
+	public static void main(String[] args) {
+		SpringApplication.run(SavedJobsApplication.class, args);
+	}
+
+}

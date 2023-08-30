@@ -1,0 +1,58 @@
+name: CICD for frontend
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - "frontend/**"
+
+jobs:
+  Docker-build:
+    # if: github.event.pull_request.merged == 'true'
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: frontend
+    timeout-minutes: 15
+    steps:
+      - name: checkout the repo
+        uses: actions/checkout@v2
+
+      - name: building image for frontend
+        run: docker build  -t ${{ secrets.PACKAGE_URL }}/${{ secrets.REGISTRY_USERNAME }}/bc55_frontend:latest .
+      - name: login to github packages
+        run: docker login ${{ secrets.PACKAGE_URL }} -u ${{ secrets.REGISTRY_USERNAME }} --password ${{ secrets.REGISTRY_TOKEN }}
+
+      - name: pushing image
+        run: docker push ${{ secrets.PACKAGE_URL }}/${{ secrets.REGISTRY_USERNAME }}/bc55_frontend:latest
+
+  deploy:
+    # if: github.event.pull_request.merged == 'true'
+    name: deploy the front  EC2
+    runs-on: self-hosted
+    timeout-minutes: 15
+    needs:
+     - Docker-build
+    steps:
+      - name: aws creddentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{secrets.ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{secrets.SECRET_ACCESS_KEY}} 
+          aws-session-token: ${{secrets.SESSION_TOKEN}} 
+          aws-region: us-east-2
+      - name: disable the strict host key checking
+        run:  echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config    
+      - name: copy key inside the ssh
+        run:  echo -e "${{secrets.PVT_KEY}}" > ~/.ssh/id_rsa  
+      - name: 
+        run:  chmod 600 ~/.ssh/id_rsa 
+      - name: Docker Login and Docker commands
+        run: |
+          ssh ${{ secrets.USERNAME }}@${{ secrets.KNOWN_HOSTS }} -i ~/.ssh/github_actions "docker login ${{ env.GITHUB_PACKAGE_URL }} -u ${{ secrets.REGISTRY_USERNAME }} --password ${{ secrets.REGISTRY_TOKEN }} 
+          docker stop frontend
+          docker rm frontend
+          docker rmi ${{ secrets.PACKAGE_URL }}/${{ secrets.REGISTRY_USERNAME }}/bc55_frontend:latest
+          docker pull ${{ secrets.PACKAGE_URL }}/${{ secrets.REGISTRY_USERNAME }}/bc55_frontend:latest
+          docker run -d --name frontend -p 3000:3000 ${{ secrets.PACKAGE_URL }}/${{ secrets.REGISTRY_USERNAME }}/bc55_frontend:latest"
+          exit
